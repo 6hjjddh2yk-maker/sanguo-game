@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>三国立志传 · 网页版</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============ 标题画面 ============ -->
+<div id="title-screen" class="overlay">
+  <div class="title-panel">
+    <h1 class="game-title">三国立志传</h1>
+    <p class="game-subtitle">—— 乱世浮沉，唯志所向 ——</p>
+    <div class="title-form">
+      <label>姓名：<input id="input-name" type="text" maxlength="8" placeholder="请输入姓名" value="赵四"></label>
+      <label>出身身份：
+        <select id="input-identity">
+          <option value="侠客">侠客（攻城略地 · 仕途晋升）</option>
+          <option value="商人">商人（跑商贸易 · 垄断物价）</option>
+          <option value="间谍">间谍（暗杀谍报 · 破坏）</option>
+          <option value="海贼">海贼（劫掠 · 水战）</option>
+          <option value="医生">医生（采药治病 · 救人）</option>
+          <option value="帮主">帮主（开宗立派 · 比武）</option>
+        </select>
+      </label>
+      <p class="identity-tip" id="identity-tip">Phase 2 将为各身份开放专属面板，当前版本全身份共享通用面板。</p>
+      <div class="title-buttons">
+        <button id="btn-new-game" class="btn btn-primary">开创新生涯</button>
+        <button id="btn-continue" class="btn">继续上次存档</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 主界面 ============ -->
+<div id="game-root" class="hidden">
+
+  <!-- 顶部状态栏 -->
+  <header id="top-bar">
+    <div class="brand">三国立志传</div>
+    <div id="date-display" class="date-display">中平元年 · 正月 · 一日</div>
+    <div id="season-display" class="season-display">春</div>
+    <div class="res-group">
+      <span class="res" title="身份">🧧 <b id="res-identity">侠客</b></span>
+      <span class="res" title="金钱">💰 <b id="res-money">100</b> 贯</span>
+      <span class="res" title="体力">🔥 <b id="res-hp">100</b>/<b id="res-hp-max">100</b></span>
+      <span class="res" title="名声">⭐ <b id="res-fame">0</b></span>
+      <span class="res" title="所在地">📍 <b id="res-location">洛阳</b></span>
+      <span class="res" title="官职 / 商才" id="res-title-wrap">🎖 <b id="res-title">-</b></span>
+    </div>
+    <div class="top-actions">
+      <button id="btn-identity" class="btn btn-small">身份面板</button>
+      <button id="btn-save" class="btn btn-small">存档</button>
+      <button id="btn-back-title" class="btn btn-small">回主菜单</button>
+    </div>
+  </header>
+
+  <main id="layout">
+    <!-- 大地图画布 -->
+    <section id="map-panel">
+      <canvas id="map-canvas" width="1000" height="700"></canvas>
+      <div id="map-tip">点击与你所在城池<b>相邻（高亮）</b>的节点开始移动，移动天数由路程远近决定，路上可能遭遇随机事件。</div>
+    </section>
+
+    <!-- 右侧角色面板 -->
+    <aside id="side-panel">
+      <div class="card" id="char-card">
+        <h2 id="char-name">赵四 <small id="char-title">· 无名小卒</small></h2>
+        <table class="stat-table">
+          <tr><td>统率</td><td><b id="st-leader">50</b></td><td>武力</td><td><b id="st-force">60</b></td></tr>
+          <tr><td>智力</td><td><b id="st-wit">50</b></td><td>政治</td><td><b id="st-politics">50</b></td></tr>
+          <tr><td>魅力</td><td><b id="st-charm">55</b></td><td colspan="2"></td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>行动指令 <small>（每行动消耗 1 天）</small></h2>
+        <div id="action-buttons" class="action-grid">
+          <button class="btn action" data-action="rest">客栈休息<br><small>恢复体力</small></button>
+          <button class="btn action" data-action="train">勤练武艺<br><small>武力+</small></button>
+          <button class="btn action" data-action="study">书院读书<br><small>智力/政治+</small></button>
+          <button class="btn action" data-action="social">拜访名士<br><small>魅力/名声+</small></button>
+          <button class="btn action" data-action="work">市集帮工<br><small>赚金钱</small></button>
+          <button class="btn action" data-action="smith">铁匠铺<br><small>打铁（需在城）</small></button>
+          <button class="btn action" data-action="tavern">酒肆赌局<br><small>德扑/结交武将</small></button>
+          <button class="btn action" data-action="visit">拜访武将<br><small>结交/送礼/切磋</small></button>
+          <button class="btn action" data-action="search">四处探索<br><small>机遇/危险</small></button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>行囊 <small id="bag-cap"></small></h2>
+        <div id="bag-list" class="bag-list">空空如也</div>
+      </div>
+
+      <div class="card">
+        <h2>技艺 <small>熟练度成长</small></h2>
+        <div id="skill-list" class="bag-list">—</div>
+      </div>
+
+      <div class="card">
+        <h2>同行武将 <small>亲密度达 80 可招揽</small></h2>
+        <div id="party-list" class="bag-list">尚无同伴</div>
+      </div>
+
+      <div class="card">
+        <h2>消息录</h2>
+        <div id="log-panel"></div>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<!-- ============ 交易弹窗（商人跑商） ============ -->
+<div id="trade-modal" class="overlay hidden">
+  <div class="event-panel trade-panel">
+    <h2 id="trade-title">市集</h2>
+    <div id="trade-info" class="trade-info"></div>
+    <div id="trade-list" class="trade-list"></div>
+    <button id="trade-close" class="btn" style="margin-top:14px;">离开市集</button>
+  </div>
+</div>
+
+<!-- ============ 身份面板 ============ -->
+<div id="identity-modal" class="overlay hidden">
+  <div class="event-panel">
+    <h2 id="identity-title">身份面板</h2>
+    <div id="identity-body" class="identity-body"></div>
+    <div id="identity-actions" class="identity-actions"></div>
+    <button id="identity-close" class="btn" style="margin-top:14px;">关闭</button>
+  </div>
+</div>
+
+<!-- ============ 事件弹窗 ============ -->
+<div id="event-modal" class="overlay hidden">
+  <div class="event-panel">
+    <h2 id="event-title">事件</h2>
+    <p id="event-text"></p>
+    <div id="event-options"></div>
+  </div>
+</div>
+
+<!-- ============ 单挑小游戏 ============ -->
+<div id="duel-modal" class="overlay hidden">
+  <div class="event-panel duel-panel">
+    <h2 id="duel-title">单挑</h2>
+    <canvas id="duel-canvas" width="720" height="420"></canvas>
+    <div id="duel-actions" class="duel-actions">
+      <button class="btn" data-d="attack">⚔ 攻击</button>
+      <button class="btn" data-d="special" id="duel-special-btn">✨ 必杀</button>
+      <button class="btn" data-d="guard">🛡 防御</button>
+      <button class="btn" data-d="charge">🔥 蓄力</button>
+    </div>
+    <div id="duel-log" class="duel-log"></div>
+  </div>
+</div>
+
+<!-- ============ 舌战小游戏 ============ -->
+<div id="debate-modal" class="overlay hidden">
+  <div class="event-panel duel-panel">
+    <h2 id="debate-title">舌战</h2>
+    <canvas id="debate-canvas" width="720" height="420"></canvas>
+    <div id="debate-log" class="duel-log"></div>
+  </div>
+</div>
+
+<!-- ============ 拜访武将弹窗 ============ -->
+<div id="visit-modal" class="overlay hidden">
+  <div class="event-panel visit-panel">
+    <h2 id="visit-title">拜访武将</h2>
+    <div id="visit-list" class="visit-list"></div>
+    <button id="visit-close" class="btn" style="margin-top:12px;">告辞</button>
+  </div>
+</div>
+
+<!-- ============ 茶道/锻冶小游戏 ============ -->
+<div id="craft-modal" class="overlay hidden">
+  <div class="event-panel duel-panel">
+    <h2 id="craft-title">小游戏</h2>
+    <canvas id="craft-canvas" width="720" height="360"></canvas>
+    <div id="craft-log" class="duel-log"></div>
+    <div id="craft-actions" class="duel-actions">
+      <button id="craft-done" class="btn btn-primary hidden">完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 配药小游戏 ============ -->
+<div id="herb-modal" class="overlay hidden">
+  <div class="event-panel visit-panel">
+    <h2>配药 · 金创药方</h2>
+    <p id="herb-recipe" style="font-size:14px;color:var(--seal-red-dark);line-height:1.6;"></p>
+    <div id="herb-grid" class="herb-grid"></div>
+    <div id="herb-status" class="herb-status">已选 0/3 味药材</div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:12px;">
+      <button id="herb-confirm" class="btn btn-primary">合成丹药</button>
+      <button id="herb-cancel" class="btn">放弃</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 酒肆 · 德州扑克 ============ -->
+<div id="poker-modal" class="overlay hidden">
+  <div class="event-panel poker-panel">
+    <h2 id="pk-title">酒肆 · 德州扑克</h2>
+    <div class="poker-table">
+      <div class="poker-opp">
+        <div class="poker-avatar" id="pk-opp-avatar">🎖</div>
+        <div class="poker-opp-info">
+          <div id="pk-opp-name" class="pk-name">对手</div>
+          <div id="pk-opp-money" class="pk-money">💰 0 贯</div>
+        </div>
+        <div id="pk-bubble" class="pk-bubble hidden"></div>
+      </div>
+      <div id="pk-opp-cards" class="pk-cards"></div>
+      <div class="poker-community">
+        <div id="pk-community" class="pk-cards"></div>
+        <div id="pk-pot" class="pk-pot">底池：0 贯</div>
+      </div>
+      <div id="pk-player-cards" class="pk-cards"></div>
+      <div class="poker-me">
+        <div class="poker-opp-info">
+          <div id="pk-me-name" class="pk-name">你</div>
+          <div id="pk-me-money" class="pk-money">💰 0 贯</div>
+        </div>
+        <div id="pk-msg" class="pk-msg">洗牌中……</div>
+      </div>
+    </div>
+    <div id="pk-actions" class="duel-actions">
+      <button class="btn" data-p="fold">弃牌</button>
+      <button class="btn" data-p="call">跟注</button>
+      <button class="btn" data-p="raise">加注 50</button>
+      <button class="btn" data-p="allin">全押</button>
+      <button class="btn" id="pk-xray">👁 透视眼</button>
+      <button class="btn" id="pk-quit">离席</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 合战战棋 ============ -->
+<div id="battle-modal" class="overlay hidden">
+  <div class="event-panel duel-panel">
+    <h2 id="battle-title">合战</h2>
+    <canvas id="battle-canvas" width="720" height="460"></canvas>
+    <div id="battle-log" class="duel-log"></div>
+    <div class="duel-actions">
+      <button id="battle-end" class="btn">⏭ 结束回合</button>
+      <button id="battle-flee" class="btn">🏃 撤退</button>
+    </div>
+  </div>
+</div>
+
+<!-- 临时提示 Toast -->
+<div id="toast" class="hidden"></div>
+
+<script src="data.js"></script>
+<script src="poker.js"></script>
+<script src="battle.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
